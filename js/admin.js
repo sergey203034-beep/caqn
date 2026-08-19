@@ -333,13 +333,13 @@ function openCakeModal(cakeId) {
   renderCakeMediaPreview();
   document.getElementById('cakeModalOverlay').classList.add('is-open');
   document.getElementById('cakeModal').classList.add('is-open');
-  document.body.style.overflow = 'hidden';
+  lockBodyScroll();
 }
 
 function closeCakeModal() {
   document.getElementById('cakeModalOverlay').classList.remove('is-open');
   document.getElementById('cakeModal').classList.remove('is-open');
-  document.body.style.overflow = '';
+  unlockBodyScroll();
 }
 
 function initCakeForm() {

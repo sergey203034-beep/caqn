@@ -17,6 +17,54 @@ const STORAGE_KEYS = {
   currentChatId: 'lk_current_chat_id'
 };
 
+/* ---------------------- Блокировка прокрутки фона (модалки/шторки) ----------------------
+   На iOS Safari простого "overflow: hidden" на <body> недостаточно — фон всё равно
+   можно "прокрутить" пальцем под открытым модальным окном (упругая прокрутка/bounce),
+   из-за чего вся страница визуально "прыгает", фиксированные кнопки (например, кнопка
+   поддержки) съезжают с места, а после закрытия окна тап по кнопкам попадает мимо,
+   потому что страница физически сместилась. Фикс: на время блокировки "замораживаем"
+   body через position:fixed с сохранением текущей прокрутки, а при разблокировке
+   возвращаем прокрутку на место. */
+let _scrollLockY = 0;
+let _scrollLockCount = 0;
+function lockBodyScroll() {
+  if (_scrollLockCount === 0) {
+    _scrollLockY = window.scrollY || document.documentElement.scrollTop || 0;
+    document.body.style.position = 'fixed';
+    document.body.style.top = -_scrollLockY + 'px';
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.width = '100%';
+    document.body.style.overflow = 'hidden';
+  }
+  _scrollLockCount++;
+}
+function unlockBodyScroll() {
+  if (_scrollLockCount === 0) return;
+  _scrollLockCount--;
+  if (_scrollLockCount === 0) {
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.left = '';
+    document.body.style.right = '';
+    document.body.style.width = '';
+    document.body.style.overflow = '';
+    window.scrollTo(0, _scrollLockY);
+  }
+}
+/* Полный сброс — используем на всякий случай при закрытии "всех" модалок разом,
+   чтобы счётчик не мог "залипнуть" из-за пропущенного вызова unlock. */
+function forceUnlockBodyScroll() {
+  _scrollLockCount = 0;
+  document.body.style.position = '';
+  document.body.style.top = '';
+  document.body.style.left = '';
+  document.body.style.right = '';
+  document.body.style.width = '';
+  document.body.style.overflow = '';
+  window.scrollTo(0, _scrollLockY);
+}
+
 /* Палитра для карточных SVG-иллюстраций тортов по категориям */
 const CAKE_PALETTES = {
   wedding: { base: '#F6F0E3', icing: '#FFFFFF', accent: '#B98C8F', crumb: '#EAD9BE' },

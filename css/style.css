@@ -1022,6 +1022,12 @@ a { color: inherit; text-decoration: none; }
   position: fixed;
   right: 22px;
   bottom: 22px;
+  /* На iOS/Android клавиатура и появляющаяся/скрывающаяся адресная строка
+     меняют высоту видимой области — привязываем отступ снизу к "безопасной"
+     зоне устройства, чтобы кнопка поддержки не "прыгала" и не пряталась
+     под системными панелями/чёлкой-индикатором. */
+  bottom: max(22px, env(safe-area-inset-bottom, 0px) + 14px);
+  right: max(22px, env(safe-area-inset-right, 0px) + 22px);
   z-index: 80;
   display: flex;
   flex-direction: column;
@@ -1273,6 +1279,15 @@ a { color: inherit; text-decoration: none; }
 .support-chat-input button:hover { background: var(--terracotta-dark); }
 
 @media (max-width: 480px) {
-  .support-chat { right: 14px; bottom: 14px; }
-  .support-chat-panel { width: calc(100vw - 28px); height: min(520px, calc(100vh - 100px)); }
+  .support-chat {
+    right: max(14px, env(safe-area-inset-right, 0px) + 10px);
+    bottom: max(14px, env(safe-area-inset-bottom, 0px) + 10px);
+  }
+  .support-chat-panel {
+    width: calc(100vw - 28px);
+    /* dvh учитывает реальную видимую высоту (без адресной строки/клавиатуры),
+       vh — запасной вариант для старых браузеров, которые dvh не понимают */
+    height: min(520px, calc(100vh - 100px));
+    height: min(520px, calc(100dvh - 100px));
+  }
 }

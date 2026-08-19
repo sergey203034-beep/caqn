@@ -131,9 +131,11 @@ function initMobileMenu() {
     const open = nav.classList.toggle('is-open');
     btn.classList.toggle('is-open', open);
     btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open) lockBodyScroll(); else unlockBodyScroll();
   };
   btn.addEventListener('click', toggle);
   nav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+    if (nav.classList.contains('is-open')) unlockBodyScroll();
     nav.classList.remove('is-open');
     btn.classList.remove('is-open');
     btn.setAttribute('aria-expanded', 'false');
@@ -147,14 +149,14 @@ function openModal(id) {
   closeAllModals();
   document.getElementById('overlay').classList.add('is-open');
   document.getElementById(id).classList.add('is-open');
-  document.body.style.overflow = 'hidden';
+  lockBodyScroll();
 }
 function closeAllModals() {
   MODAL_IDS.forEach(id => document.getElementById(id).classList.remove('is-open'));
   const drawer = document.getElementById('cartDrawer');
   if (drawer) drawer.classList.remove('is-open');
   document.getElementById('overlay').classList.remove('is-open');
-  document.body.style.overflow = '';
+  forceUnlockBodyScroll();
 }
 
 function initModals() {
@@ -449,7 +451,7 @@ function initCartDrawer() {
     renderCartDrawer();
     overlay.classList.add('is-open');
     drawer.classList.add('is-open');
-    document.body.style.overflow = 'hidden';
+    lockBodyScroll();
   });
   document.getElementById('cartCloseBtn').addEventListener('click', closeAllModals);
   document.getElementById('checkoutBtn').addEventListener('click', () => {
