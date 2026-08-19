@@ -320,6 +320,18 @@ async function setOrders(newOrders) {
 }
 
 function getReviews() { return JSON.parse(localStorage.getItem(STORAGE_KEYS.reviews) || '[]'); }
+function setReviews(reviews) { localStorage.setItem(STORAGE_KEYS.reviews, JSON.stringify(reviews)); }
+function addReview(review) {
+  const reviews = getReviews();
+  reviews.unshift({
+    id: 'r' + Date.now(),
+    name: review.name,
+    text: review.text,
+    rating: review.rating
+  });
+  setReviews(reviews);
+  return reviews;
+}
 
 function getSettings() {
   return {

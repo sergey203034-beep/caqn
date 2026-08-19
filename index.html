@@ -154,6 +154,34 @@
         <h2>Что говорят наши клиенты</h2>
       </div>
       <div class="reviews-track" id="reviewsTrack"></div>
+
+      <div class="review-form-card">
+        <h3>Оставить отзыв</h3>
+        <div class="form-alert" id="reviewAlert"></div>
+        <form id="reviewForm" novalidate>
+          <div class="field">
+            <label for="reviewName">Ваше имя</label>
+            <input type="text" id="reviewName" required>
+            <div class="field-error">Введите имя</div>
+          </div>
+          <div class="field">
+            <label>Оценка</label>
+            <div class="star-picker" id="reviewStars" data-value="5">
+              <button type="button" class="star-picker-btn" data-value="1" aria-label="1 звезда">★</button>
+              <button type="button" class="star-picker-btn" data-value="2" aria-label="2 звезды">★</button>
+              <button type="button" class="star-picker-btn" data-value="3" aria-label="3 звезды">★</button>
+              <button type="button" class="star-picker-btn" data-value="4" aria-label="4 звезды">★</button>
+              <button type="button" class="star-picker-btn" data-value="5" aria-label="5 звёзд">★</button>
+            </div>
+          </div>
+          <div class="field">
+            <label for="reviewText">Ваш отзыв</label>
+            <textarea id="reviewText" required></textarea>
+            <div class="field-error">Напишите пару слов о торте</div>
+          </div>
+          <button type="submit" class="btn btn-primary">Опубликовать отзыв</button>
+        </form>
+      </div>
     </div>
   </section>
 

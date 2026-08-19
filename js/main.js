@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initForgotForm();
   initCheckoutForm();
   initContactForm();
+  initReviewForm();
   initAccountTabs();
   updateCartUI();
   updateAuthUI();
@@ -122,6 +123,51 @@ function renderReviews() {
   `).join('');
 }
 
+/* ---------------------- Форма "Оставить отзыв" ---------------------- */
+function initReviewForm() {
+  const form = document.getElementById('reviewForm');
+  if (!form) return;
+
+  const starWrap = document.getElementById('reviewStars');
+  const starBtns = Array.from(starWrap.querySelectorAll('.star-picker-btn'));
+
+  const paintStars = (value) => {
+    starWrap.dataset.value = value;
+    starBtns.forEach(b => b.classList.toggle('is-filled', parseInt(b.dataset.value, 10) <= value));
+  };
+  paintStars(parseInt(starWrap.dataset.value, 10) || 5);
+
+  starBtns.forEach(btn => {
+    btn.addEventListener('click', () => paintStars(parseInt(btn.dataset.value, 10)));
+  });
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    hideAlert('reviewAlert');
+
+    const nameField = document.getElementById('reviewName');
+    const textField = document.getElementById('reviewText');
+    const name = nameField.value.trim();
+    const text = textField.value.trim();
+    const rating = parseInt(starWrap.dataset.value, 10) || 5;
+
+    let hasError = false;
+    setFieldError(nameField.closest('.field'), !name);
+    if (!name) hasError = true;
+    setFieldError(textField.closest('.field'), !text);
+    if (!text) hasError = true;
+    if (hasError) return;
+
+    addReview({ name, text, rating });
+    renderReviews();
+
+    form.reset();
+    paintStars(5);
+    showAlert('reviewAlert', 'Спасибо! Ваш отзыв опубликован.', 'success');
+    showToast('Отзыв добавлен');
+  });
+}
+
 /* ---------------------- Mobile menu ---------------------- */
 function initMobileMenu() {
   const btn = document.getElementById('hamburgerBtn');
@@ -134,7 +180,13 @@ function initMobileMenu() {
     if (open) lockBodyScroll(); else unlockBodyScroll();
   };
   btn.addEventListener('click', toggle);
-  nav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+  /* Закрываем меню и снимаем блокировку прокрутки по клику на ЛЮБОЙ
+     интерактивный элемент внутри мобильного меню — не только на ссылки
+     разделов, но и на кнопки "Войти" / "Заказать" / кабинет. Раньше
+     слушатель вешался только на <a>, поэтому клик по этим кнопкам не
+     закрывал меню и не снимал position:fixed с <body> — страница
+     оставалась «замороженной», и казалось, что кнопки не работают. */
+  nav.querySelectorAll('a, button').forEach(el => el.addEventListener('click', () => {
     if (nav.classList.contains('is-open')) unlockBodyScroll();
     nav.classList.remove('is-open');
     btn.classList.remove('is-open');
