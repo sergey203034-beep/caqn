@@ -1071,6 +1071,17 @@ a { color: inherit; text-decoration: none; }
   align-items: flex-end;
   gap: 14px;
   font-family: var(--font-body);
+  /* ВАЖНО: сам контейнер не должен перехватывать тапы — кликабельными
+     должны быть только его видимые дети (кнопка-переключатель и панель
+     чата). Раньше .support-chat-panel был обычным flex-элементом и, даже
+     будучи невидимым (opacity:0), занимал место в раскладке — контейнер
+     раздувался почти на весь экран телефона и "съедал" тапы по бургеру,
+     шапке и кнопкам "В корзину", которые физически находились под ним. */
+  pointer-events: none;
+}
+.support-chat-toggle,
+.support-chat-panel {
+  pointer-events: auto;
 }
 
 .support-chat-toggle {
