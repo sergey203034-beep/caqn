@@ -156,37 +156,41 @@ const DEFAULT_SETTINGS = {
 };
 
 /* ===================================================================
-   Общая база данных — свой PHP+MySQL бэкенд (backend/api.php),
-   работает на российском хостинге. Если адрес в js/backend-config.js
-   ещё не заполнен реальным значением, приложение работает в локальном
-   демо-режиме на DEFAULT_*-данных ниже (как раньше) — ничего не
-   ломается.
+   Общая база данных — Supabase (бесплатная база данных с мгновенным
+   realtime). Если адрес в js/backend-config.js ещё не заполнен
+   реальным значением, приложение работает в локальном демо-режиме
+   на DEFAULT_*-данных ниже (как раньше) — ничего не ломается.
    =================================================================== */
 const API_URL = (
-  typeof BACKEND_URL === 'string' && BACKEND_URL.startsWith('http')
-) ? BACKEND_URL.replace(/\/$/, '') : null;
-const API_KEY = (typeof BACKEND_KEY === 'string') ? BACKEND_KEY : '';
+  typeof SUPABASE_URL === 'string' && SUPABASE_URL.startsWith('http') &&
+  typeof SUPABASE_ANON_KEY === 'string' && SUPABASE_ANON_KEY.length > 10
+) ? SUPABASE_URL.replace(/\/$/, '') : null;
+
+/* Клиент Supabase (создаётся только если настройки заполнены) */
+const supabaseClient = API_URL
+  ? window.supabase.createClient(API_URL, SUPABASE_ANON_KEY)
+  : null;
 
 if (!API_URL) {
   console.warn('[Лакомый кусочек] Общий бэкенд не настроен — данные видны только в этом браузере. Смотрите js/backend-config.js.');
 }
 
 async function apiGet(table) {
-  const res = await fetch(`${API_URL}/api.php?table=${encodeURIComponent(table)}`, { cache: 'no-store' });
-  if (!res.ok) throw new Error('Ошибка API: ' + res.status);
-  return res.json();
+  const { data, error } = await supabaseClient.from(table).select('*');
+  if (error) throw new Error('Ошибка Supabase (' + table + '): ' + error.message);
+  return data;
 }
 
-async function apiPost(body) {
-  const res = await fetch(`${API_URL}/api.php`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ key: API_KEY, ...body })
-  });
-  if (!res.ok) throw new Error('Ошибка API: ' + res.status);
-  const json = await res.json();
-  if (json && json.error) throw new Error(json.error);
-  return json;
+async function apiUpsert(table, rows) {
+  if (!rows || !rows.length) return;
+  const { error } = await supabaseClient.from(table).upsert(rows);
+  if (error) throw new Error('Ошибка Supabase (' + table + '): ' + error.message);
+}
+
+async function apiDelete(table, ids) {
+  if (!ids || !ids.length) return;
+  const { error } = await supabaseClient.from(table).delete().in('id', ids);
+  if (error) throw new Error('Ошибка Supabase (' + table + '): ' + error.message);
 }
 
 let cakesCache = [];
@@ -243,26 +247,32 @@ async function initData() {
     await Promise.all([reloadCakes(), reloadOrders(), reloadUsers(), reloadSettings(), reloadSupportChats()]);
 
     if (cakesCache.length === 0) {
-      await apiPost({ table: 'cakes', action: 'upsert', rows: DEFAULT_CAKES });
-      await apiPost({ table: 'users', action: 'upsert', rows: DEFAULT_USERS });
-      await apiPost({ table: 'orders', action: 'upsert', rows: DEFAULT_ORDERS });
-      await apiPost({ table: 'settings', action: 'upsert', rows: [{ id: 1, ...DEFAULT_SETTINGS }] });
+      await apiUpsert('cakes', DEFAULT_CAKES);
+      await apiUpsert('users', DEFAULT_USERS);
+      await apiUpsert('orders', DEFAULT_ORDERS);
+      await apiUpsert('settings', [{ id: 1, ...DEFAULT_SETTINGS }]);
       await Promise.all([reloadCakes(), reloadOrders(), reloadUsers(), reloadSettings()]);
     }
 
-    /* Своего realtime у обычного PHP-хостинга нет, поэтому вместо
-       мгновенных push-уведомлений (как в Supabase) сайт каждые
-       2–3 секунды сам спрашивает бэкенд об изменениях — этого
-       достаточно, чтобы каталог, заказы и чат поддержки ощущались
-       как «живые» у всех посетителей одновременно. */
-    setInterval(async () => {
-      await Promise.all([reloadCakes(), reloadOrders(), reloadUsers(), reloadSettings(), reloadSupportChats()]);
-      notifyDataChange('cakes');
-      notifyDataChange('orders');
-      notifyDataChange('users');
-      notifyDataChange('settings');
-      notifyDataChange('support_chats');
-    }, 3000);
+    /* Мгновенные обновления через Supabase Realtime: как только кто-то
+       (клиент оформляет заказ, админ меняет каталог и т.д.) меняет
+       данные, сервер сам присылает уведомление всем открытым вкладкам
+       — без опроса по таймеру, без задержек. */
+    const realtimeTables = ['cakes', 'orders', 'users', 'settings', 'support_chats'];
+    let channel = supabaseClient.channel('public:all-changes');
+    realtimeTables.forEach((table) => {
+      channel = channel.on('postgres_changes', { event: '*', schema: 'public', table }, async () => {
+        if (table === 'cakes') await reloadCakes();
+        if (table === 'orders') await reloadOrders();
+        if (table === 'users') await reloadUsers();
+        if (table === 'settings') await reloadSettings();
+        if (table === 'support_chats') await reloadSupportChats();
+        notifyDataChange(table);
+      });
+    });
+    channel.subscribe((status) => {
+      if (status === 'SUBSCRIBED') console.log('[Лакомый кусочек] Realtime подключён — обновления мгновенные.');
+    });
   } catch (err) {
     console.error('[Лакомый кусочек] Не удалось подключиться к бэкенду, работаю в локальном демо-режиме.', err);
     if (cakesCache.length === 0) cakesCache = JSON.parse(JSON.stringify(DEFAULT_CAKES));
@@ -290,8 +300,8 @@ async function setCakes(newCakes) {
   notifyDataChange('cakes');
   if (!API_URL) { localStorage.setItem(STORAGE_KEYS.cakes, JSON.stringify(cakesCache)); return; }
   try {
-    if (removedIds.length) await apiPost({ table: 'cakes', action: 'delete', ids: removedIds });
-    if (newCakes.length) await apiPost({ table: 'cakes', action: 'upsert', rows: newCakes });
+    await apiDelete('cakes', removedIds);
+    await apiUpsert('cakes', newCakes);
   } catch (err) { console.error('setCakes', err); }
 }
 
@@ -302,8 +312,8 @@ async function setUsers(newUsers) {
   notifyDataChange('users');
   if (!API_URL) { localStorage.setItem(STORAGE_KEYS.users, JSON.stringify(usersCache)); return; }
   try {
-    if (removedIds.length) await apiPost({ table: 'users', action: 'delete', ids: removedIds });
-    if (newUsers.length) await apiPost({ table: 'users', action: 'upsert', rows: newUsers });
+    await apiDelete('users', removedIds);
+    await apiUpsert('users', newUsers);
   } catch (err) { console.error('setUsers', err); }
 }
 
@@ -314,8 +324,8 @@ async function setOrders(newOrders) {
   notifyDataChange('orders');
   if (!API_URL) { localStorage.setItem(STORAGE_KEYS.orders, JSON.stringify(ordersCache)); return; }
   try {
-    if (removedIds.length) await apiPost({ table: 'orders', action: 'delete', ids: removedIds });
-    if (newOrders.length) await apiPost({ table: 'orders', action: 'upsert', rows: newOrders });
+    await apiDelete('orders', removedIds);
+    await apiUpsert('orders', newOrders);
   } catch (err) { console.error('setOrders', err); }
 }
 
@@ -344,7 +354,7 @@ async function setSettings(settings) {
   notifyDataChange('settings');
   if (!API_URL) { localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify(settingsCache)); return; }
   try {
-    await apiPost({ table: 'settings', action: 'upsert', rows: [{ id: 1, social: settings.social, contact: settings.contact }] });
+    await apiUpsert('settings', [{ id: 1, social: settings.social, contact: settings.contact }]);
   } catch (err) { console.error('setSettings', err); }
 }
 
@@ -391,7 +401,7 @@ async function reloadSupportChats() {
 function saveSupportChat(chat) {
   chatsCache[chat.id] = chat;
   if (!API_URL) { localStorage.setItem(STORAGE_KEYS.supportChats, JSON.stringify(chatsCache)); return; }
-  apiPost({ table: 'support_chats', action: 'upsert', rows: [chat] }).catch(err => console.error('saveSupportChat', err));
+  apiUpsert('support_chats', [chat]).catch(err => console.error('saveSupportChat', err));
 }
 
 /* Добавляет сообщение в переписку и возвращает обновлённый чат.
