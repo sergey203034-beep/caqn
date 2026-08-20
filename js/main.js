@@ -346,13 +346,16 @@ function initRegisterForm() {
     const emailField = document.getElementById('regEmail').closest('.field');
     const passField = document.getElementById('regPassword').closest('.field');
     const pass2Field = document.getElementById('regPassword2').closest('.field');
+    const consentField = document.getElementById('regConsentField');
+    const consentChecked = document.getElementById('regConsent').checked;
 
     setFieldError(nameField, !name.trim());
     setFieldError(emailField, !isValidEmail(email));
     setFieldError(passField, !isValidPassword(password));
     setFieldError(pass2Field, password !== password2);
+    setFieldError(consentField, !consentChecked);
 
-    if (!name.trim() || !isValidEmail(email) || !isValidPassword(password) || password !== password2) return;
+    if (!name.trim() || !isValidEmail(email) || !isValidPassword(password) || password !== password2 || !consentChecked) return;
 
     const result = await registerUser({ name, email, password, confirmPassword: password2 });
     if (!result.ok) {
@@ -618,6 +621,9 @@ function initCheckoutForm() {
       setFieldError(field, bad);
       if (bad) valid = false;
     });
+    const consentChecked = document.getElementById('ordConsent').checked;
+    setFieldError(document.getElementById('ordConsentField'), !consentChecked);
+    if (!consentChecked) valid = false;
     if (!valid) return;
 
     const user = getCurrentUser();

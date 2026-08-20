@@ -385,6 +385,11 @@
       <input type="password" id="regPassword2" required>
       <div class="field-error">Пароли не совпадают</div>
     </div>
+    <div class="field-consent" id="regConsentField">
+      <input type="checkbox" id="regConsent">
+      <label for="regConsent">Согласен(а) на <a href="privacy.html" target="_blank" rel="noopener">обработку персональных данных</a></label>
+      <div class="field-error">Нужно подтвердить согласие</div>
+    </div>
     <button type="submit" class="btn btn-primary btn-block">Создать аккаунт</button>
     <p class="form-note">Уже есть аккаунт? <button type="button" id="showLoginFromRegister">Войти</button></p>
   </form>
@@ -457,6 +462,11 @@
         <label for="ordComment">Комментарий</label>
         <input type="text" id="ordComment" placeholder="Например, надпись на торте">
       </div>
+    </div>
+    <div class="field-consent" id="ordConsentField">
+      <input type="checkbox" id="ordConsent">
+      <label for="ordConsent">Согласен(а) на <a href="privacy.html" target="_blank" rel="noopener">обработку персональных данных</a></label>
+      <div class="field-error">Нужно подтвердить согласие</div>
     </div>
     <button type="submit" class="btn btn-primary btn-block">Подтвердить заказ</button>
   </form>
