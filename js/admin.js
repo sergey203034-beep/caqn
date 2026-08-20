@@ -81,7 +81,7 @@ function showAdminShell() {
 
 function initAdminLogin() {
   const form = document.getElementById('adminLoginForm');
-  form.addEventListener('submit', (e) => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const login = document.getElementById('adminLogin').value.trim();
     const password = document.getElementById('adminPassword').value;
@@ -95,7 +95,7 @@ function initAdminLogin() {
       return;
     }
 
-    const staff = findStaffUser(login, password);
+    const staff = await findStaffUser(login, password);
     if (staff) {
       localStorage.setItem(STORAGE_KEYS.adminSession, JSON.stringify({ name: staff.name, role: staff.role, userId: staff.id }));
       form.reset();

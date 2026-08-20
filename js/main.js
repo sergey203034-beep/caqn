@@ -307,7 +307,7 @@ function hideAlert(id) {
 /* ---------------------- Login ---------------------- */
 function initLoginForm() {
   const form = document.getElementById('loginForm');
-  form.addEventListener('submit', (e) => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
     hideAlert('loginAlert');
     const emailField = document.getElementById('loginEmail').closest('.field');
@@ -319,7 +319,7 @@ function initLoginForm() {
     setFieldError(passField, !password);
     if (!isValidEmail(email) || !password) return;
 
-    const result = loginUser({ email, password });
+    const result = await loginUser({ email, password });
     if (!result.ok) {
       showAlert('loginAlert', result.error);
       return;
@@ -334,7 +334,7 @@ function initLoginForm() {
 /* ---------------------- Register ---------------------- */
 function initRegisterForm() {
   const form = document.getElementById('registerForm');
-  form.addEventListener('submit', (e) => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
     hideAlert('registerAlert');
     const name = document.getElementById('regName').value;
@@ -354,7 +354,7 @@ function initRegisterForm() {
 
     if (!name.trim() || !isValidEmail(email) || !isValidPassword(password) || password !== password2) return;
 
-    const result = registerUser({ name, email, password, confirmPassword: password2 });
+    const result = await registerUser({ name, email, password, confirmPassword: password2 });
     if (!result.ok) {
       showAlert('registerAlert', result.error);
       return;
@@ -369,7 +369,7 @@ function initRegisterForm() {
 /* ---------------------- Forgot password ---------------------- */
 function initForgotForm() {
   const form = document.getElementById('forgotForm');
-  form.addEventListener('submit', (e) => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
     hideAlert('forgotAlert');
     const email = document.getElementById('forgotEmail').value;
@@ -377,7 +377,7 @@ function initForgotForm() {
     setFieldError(field, !isValidEmail(email));
     if (!isValidEmail(email)) return;
 
-    const result = requestPasswordReset(email);
+    const result = await requestPasswordReset(email);
     if (!result.ok) {
       showAlert('forgotAlert', result.error);
       return;
