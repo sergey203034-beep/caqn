@@ -141,6 +141,15 @@ body.admin-body {
   .admin-sidebar.is-open { transform: translateX(0); }
   .admin-mobile-bar { display: flex; }
   .admin-main { padding: 20px 16px 50px; }
+
+  /* Оверлей за выезжающим меню: просто затемнение фона, без
+     размытия — .overlay изначально задуман для модалок по центру
+     экрана (там лёгкий blur уместен), а для бокового меню он делал
+     весь контент за собой нечитаемым/"размытым". */
+  #adminOverlay {
+    backdrop-filter: none;
+    background: rgba(28, 19, 14, 0.55);
+  }
 }
 
 /* ---------- Stat cards ---------- */
